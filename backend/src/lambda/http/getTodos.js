@@ -1,33 +1,27 @@
-import { DynamoDB } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb'
+import middy from '@middy/core'
+import cors from '@middy/http-cors'
+import httpErrorHandler from '@middy/http-error-handler'
+import { getTodos } from '../../businessLogic/todos.mjs'
 import { getUserId } from '../utils.mjs'
+import { createLogger } from '../../utils/logger.mjs'
 
-const dynamoDbClient = DynamoDBDocument.from(new DynamoDB())
+const logger = createLogger('getTodos')
 
-const todosTable = process.env.TODOS_TABLE
+export const handler = middy()
+  .use(httpErrorHandler())
+  .use(
+    cors({
+      credentials: true
+    })
+  )
+  .handler(async (event) => {
+    const userId = getUserId(event)
+    logger.info(`Processing getTodos event for userId=${userId}`, { userId })
 
-export async function handler(event) {
-  
-  const userId = getUserId(event)
+    const items = await getTodos(userId)
 
-  console.log(`Getting list of TODOs|USER_ID=${userId}`)
-
-  const result = await dynamoDbClient.query({
-    TableName: todosTable,
-    KeyConditionExpression: 'userId = :userId',
-    ExpressionAttributeValues: {
-      ':userId': userId
-    },
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ items })
+    }
   })
-  console.log(`${result.Count} items found|USER_ID=${userId}`)
-  const items = result.Items
-
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
-    body: JSON.stringify({ items })
-  }
-}
