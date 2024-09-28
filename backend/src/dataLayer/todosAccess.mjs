@@ -52,14 +52,14 @@ export class TodosManager {
           userId: todoItem.userId,
           todoId: todoItem.todoId
         },
-        ExpressionAttributeNames: { "#name": "name" },
-        UpdateExpression: "set #name = :name, dueDate = :dueDate, done = :done",
+        ExpressionAttributeNames: { '#name': 'name' },
+        UpdateExpression: 'set #name = :name, dueDate = :dueDate, done = :done',
         ExpressionAttributeValues: {
-          ":name": todoItem.name,
-          ":dueDate": todoItem.dueDate,
-          ":done": todoItem.done
+          ':name': todoItem.name,
+          ':dueDate': todoItem.dueDate,
+          ':done': todoItem.done
         },
-        ReturnValues: "UPDATED_NEW"
+        ReturnValues: 'UPDATED_NEW'
       })
     logger.info('TODO updated successfully', { todoId: todoItem.todoId , updatedItem})
     return updatedItem
@@ -68,16 +68,35 @@ export class TodosManager {
   async deleteTodo(todoId, userId) {
     logger.info('Deleting a TODO', { todoId })
     
-    await this.dynamoDbClient.delete({
+    const deletedItem = await this.dynamoDbClient.delete({
         TableName: this.todosTable,
         Key: { 
           userId: userId,
           todoId: todoId
         },
+        ReturnValues: 'ALL_OLD'
       })
-    logger.info('TODO deleted successfully', { todoId })
+    logger.info('TODO deleted successfully', { todoId, deletedItem })
+    return deletedItem.Attributes
   }
 
-
+  async updateTodoAttachmentUrl(todoItem) {
+    logger.info('Updating a todoAttachmentUrl', { todoItem })
+    
+    const updatedItem = await this.dynamoDbClient.update({
+        TableName: this.todosTable,
+        Key: { 
+          userId: todoItem.userId,
+          todoId: todoItem.todoId
+        },
+        UpdateExpression: 'set attachmentUrl = :attachmentUrl',
+        ExpressionAttributeValues: {
+          ':attachmentUrl': todoItem.attachmentUrl
+        },
+        ReturnValues: "UPDATED_NEW"
+      })
+    logger.info('Todo todoAttachmentUrl updated successfully', { todoId: todoItem.todoId , updatedItem})
+    return updatedItem
+  }
 
 }

@@ -16,7 +16,7 @@ export const handler = middy()
   )
   .handler(async (event) => {
     const userId = getUserId(event)
-    const todoId = event.pathParameters.todoId;
+    const todoId = event.pathParameters.todoId
     logger.info(`Processing updateTodo event for todoId=${todoId} and userId=${userId}`, { todoId, userId })
     const updatedTodo = JSON.parse(event.body)
 

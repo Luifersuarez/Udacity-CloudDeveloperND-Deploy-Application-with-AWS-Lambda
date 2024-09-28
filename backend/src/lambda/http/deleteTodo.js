@@ -1,7 +1,7 @@
 import middy from '@middy/core'
 import cors from '@middy/http-cors'
 import httpErrorHandler from '@middy/http-error-handler'
-import { deleteTodo } from '../../businessLogic/todos.mjs'
+import { deleteTodo, deleteAttachment } from '../../businessLogic/todos.mjs'
 import { getUserId } from '../utils.mjs'
 import { createLogger } from '../../utils/logger.mjs'
 
@@ -16,10 +16,16 @@ export const handler = middy()
   )
   .handler(async (event) => {
     const userId = getUserId(event)
-    const todoId = event.pathParameters.todoId;
+    const todoId = event.pathParameters.todoId
     logger.info(`Processing deleteTodo event for todoId=${todoId} and userId=${userId}`, { todoId, userId })
 
-    await deleteTodo(todoId, userId)
+    const deletedItem = await deleteTodo(todoId, userId)
+    const attachmentUrl = deletedItem.attachmentUrl
+    
+    // If the deletedTodo has an attachmentUrl delete the document from S3 bucket
+    if (attachmentUrl !== undefined) {
+      await deleteAttachment(todoId, userId)
+    }
 
     return {
       statusCode: 204,
